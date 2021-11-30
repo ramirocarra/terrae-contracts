@@ -1,15 +1,15 @@
-# Basic Sample Hardhat Project
+# TerraeFinance
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+https://terrae.finance/
 
-Try running some of the following tasks:
+## Deployed Contracts
+Smart contracts are deployed in MATIC mainnet
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+DENARIS: [0xAbc3f95E757E180FE7Feb80790a9f239C1300aD0](https://polygonscan.com/address/0xAbc3f95E757E180FE7Feb80790a9f239C1300aD0)
+
+## Docs
+Head to the [docs](https://docs.terrae.finance) to understand the lore.
+
+## License
+
+[MIT](LICENSE.txt)
