@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "./utils/Arrays_uint32.sol";
 
 contract Profiles is AccessControl, ERC721Enumerable {
-  bytes32 private constant USE_STAMINA_ROLE = keccak256("USE_STAMINA_ROLE");
+  bytes32 private constant USE_ENERGY_ROLE = keccak256("USE_ENERGY_ROLE");
   bytes32 private constant MANTAINER_ROLE = keccak256("MANTAINER_ROLE");
   bytes32 private constant ADD_EXP_ROLE = keccak256("ADD_EXP_ROLE");
   // Burning profiles??
@@ -21,176 +21,32 @@ contract Profiles is AccessControl, ERC721Enumerable {
     0,
     524,
     1048,
-    1571,
-    2095,
-    2619,
-    3143,
-    3667,
-    4192,
-    4716,
-    5241,
-    5766,
-    6292,
-    6818,
-    7344,
-    7871,
-    8398,
-    8925,
-    9453,
-    9982,
-    10511,
-    11041,
-    11571,
-    12102,
-    12633,
-    13166,
-    13699,
-    14233,
-    14767,
-    15303,
-    15839,
-    16376,
-    16914,
-    17453,
-    17993,
-    18534,
-    19077,
-    19620,
-    20164,
-    20710,
-    21256,
-    21804,
-    22353,
-    22904,
-    23455,
-    24008,
-    24563,
-    25119,
-    25676,
-    26235,
-    26795,
-    27357,
-    27921,
-    28486,
-    29053,
-    29622,
-    30192,
-    30765,
-    31339,
-    31915,
-    32492,
-    33072,
-    33654,
-    34238,
-    34824,
-    35412,
-    36003,
-    36595,
-    37190,
-    37787,
-    38387,
-    38989,
-    39593,
-    40200,
-    40810,
-    41422,
-    42037,
-    42654,
-    43274,
-    43897,
-    44523,
-    45152,
-    45784,
-    46419,
-    47057,
-    47698,
-    48342,
-    48990,
-    49641,
-    50295,
-    50953,
-    51614,
-    52279,
-    52948,
-    53620,
-    54296,
-    54976,
-    55660,
-    56348,
-    57039,
-    57736,
-    58436,
-    59140,
-    59849,
-    60563,
-    61281,
-    62003,
-    62730,
-    63462,
-    64199,
-    64941,
-    65688,
-    66440,
-    67198,
-    67960,
-    68729,
-    69502,
-    70282,
-    71067,
-    71858,
-    72655,
-    73458,
-    74267,
-    75083,
-    75905,
-    76733,
-    77568,
-    78411,
-    79260,
-    80116,
-    80979,
-    81850,
-    82728,
-    83613,
-    84507,
-    85409,
-    86318,
-    87236,
-    88162,
-    89097,
-    90041,
-    90993,
-    91955,
-    92926,
-    93907,
-    94897,
-    95897,
-    96907,
+    //....
     97928,
     98959
   ];
 
   mapping(uint256 => Profile) public profiles;
-  mapping(string => uint256) private _namesToProfileId;
+  mapping(string => uint256) private _nameToProfileId;
   mapping(address => bool) private _avatarContractsEnabled;
 
   uint8 private _maxDefaultAvatars = 4;
   string private _defaultAvatarBaseURI = "https://terrae.finance/avatars/";
 
-  uint32 public maxStamina = 100;
-  uint32 public secondsPerStamina = 300;
+  uint256 public maxEnergy = 100;
+  uint256 public secondsPerEnergy = 300;
 
   struct Profile {
     string name; //limits???? moderator?
     uint256 created;
-    uint32 exp;
+    uint256 exp;
     uint8 defaultAvatarId;
     // The id of the custom NFT Avatar
     // Allow to whitelist minting contracts?
     uint256 customAvatarId;
     address customAvatarContract; // Minting address if customizable, will need to ckeck ownership always
-    uint32 stamina;
-    uint256 staminaTimestamp;
+    uint256 energy;
+    uint256 energyTimestamp;
   }
 
   // Symbol thoughts????
@@ -213,7 +69,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
     uint256 amount
   ) internal virtual override {
     super._beforeTokenTransfer(from, to, amount);
-    require(balanceOf(to) == 0, "Recieving address already owns a profile");
+    require(!hasProfile(to), "Receiving address already owns a profile");
   }
 
   /**
@@ -236,8 +92,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
   /**
    * @dev Checks if the name is already taken.
    */
-  function nameTaken(string memory _name) public view returns (bool taken) {
-    return (_namesToProfileId[_name] > 0);
+  function nameTaken(string memory _name) public view returns (bool) {
+    return (_nameToProfileId[_name] > 0);
   }
 
   /**
@@ -250,7 +106,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
     require(!nameTaken(name), "name already taken");
 
     uint256 profileId = totalSupply();
-    _namesToProfileId[name] = profileId;
+    _nameToProfileId[name] = profileId;
 
     _safeMint(msg.sender, profileId); // mint to origin or sender??
     profiles[profileId] = Profile(
@@ -260,8 +116,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
       defaultAvatarId, //default avatar
       0, // custom avatar id
       address(0), // custom avatar address
-      maxStamina, // stamina
-      block.timestamp //stamina timestamp
+      maxEnergy, // energy
+      block.timestamp //energy timestamp
     );
 
     return profileId;
@@ -284,8 +140,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
     returns (
       string memory,
       uint256,
-      uint32,
-      uint16,
+      uint256,
+      uint256,
       uint8,
       uint256,
       address,
@@ -336,7 +192,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
   // Set the return types when defined
   function getProfileIdByName(string memory profileName) public view returns (uint256) {
     require(nameTaken(profileName), "name not found");
-    return _namesToProfileId[profileName];
+    return _nameToProfileId[profileName];
   }
 
   /**
@@ -358,7 +214,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
    */
   function updateCustomAvatar(
     uint256 profileId,
-    uint256 customAvatarId,
+    uint8 customAvatarId,
     address customAvatarContract
   ) public returns (bool) {
     require(_isApprovedOrOwner(msg.sender, profileId), "caller is not owner nor approved");
@@ -381,56 +237,52 @@ contract Profiles is AccessControl, ERC721Enumerable {
   function addExp(address profileAddress, uint256 newExp) public onlyRole(ADD_EXP_ROLE) {
     require(hasProfile(profileAddress), "address does not own a profile");
     uint256 profileId = tokenOfOwnerByIndex(profileAddress, 0);
-    profiles[profileId].exp += uint32(newExp);
+    profiles[profileId].exp += newExp;
   }
 
   /**
    * @dev Get the level from exp points.
    */
-  function _getLevelFromExp(uint32 exp) internal view returns (uint16) {
-    return uint16(Arrays_uint32.findUpperBound(experienceTable, exp) - 1);
+  function _getLevelFromExp(uint256 exp) internal view returns (uint256) {
+    return Arrays_uint32.findUpperBound(experienceTable, exp) - 1;
   }
 
   /**
    * @dev Get the level by profile id.
    */
-  function getLevel(uint256 profileId) public view returns (uint16) {
+  function getLevel(uint256 profileId) public view returns (uint256) {
     require(_exists(profileId), "Profile does not exist");
     return _getLevelFromExp(profiles[profileId].exp);
   }
 
   /**
-   * @dev Get the stamina by profile id.
+   * @dev Get the energy by profile id.
    */
-  function getStamina(uint256 profileId) public view returns (uint32) {
+  function getEnergy(uint256 profileId) public view returns (uint256) {
     require(_exists(profileId), "Profile does not exist");
     Profile memory profile = profiles[profileId];
-    uint256 newStamina = (block.timestamp - profile.staminaTimestamp) / secondsPerStamina;
-    (bool overflowed, uint256 totalStamina) = SafeMath.tryAdd(profile.stamina, newStamina);
-    if (!overflowed || totalStamina > maxStamina) {
-      totalStamina = maxStamina;
+    uint256 newEnergy = (block.timestamp - profile.energyTimestamp) / secondsPerEnergy;
+    (bool overflowed, uint256 totalEnergy) = SafeMath.tryAdd(profile.energy, newEnergy);
+    if (!overflowed || totalEnergy > maxEnergy) {
+      totalEnergy = maxEnergy;
     }
-    return uint32(totalStamina);
+    return totalEnergy;
   }
 
   /**
-   * @dev Consumes stamina for a profile by it's address.
-   * Only constracts with USE_STAMINA_ROLE can call
-   * Returns true if consumed, false if not enough stamina
+   * @dev Consumes energy for a profile by it's address.
+   * Only constracts with USE_ENERGY_ROLE can call
+   * Returns true if consumed, false if not enough energy
    */
-  function useStamina(address profileAddress, uint32 staminaToConsume)
-    public
-    onlyRole(USE_STAMINA_ROLE)
-    returns (bool)
-  {
+  function useEnergy(address profileAddress, uint256 energyToConsume) public onlyRole(USE_ENERGY_ROLE) returns (bool) {
     require(hasProfile(profileAddress), "address does not own a profile");
     uint256 profileId = tokenOfOwnerByIndex(profileAddress, 0);
-    uint32 currentStamina = getStamina(profileId);
-    if (currentStamina < staminaToConsume) {
+    uint256 currentEnergy = getEnergy(profileId);
+    if (currentEnergy < energyToConsume) {
       // Or revert????
       return false;
     }
-    profiles[profileId].stamina = currentStamina - staminaToConsume;
+    profiles[profileId].energy = currentEnergy - energyToConsume;
     return true;
   }
 
@@ -482,18 +334,18 @@ contract Profiles is AccessControl, ERC721Enumerable {
   }
 
   /**
-   * @dev Updates the stamina max value.
+   * @dev Updates the energy max value.
    * Only MANTAINER_ROLE can call
    */
-  function updateMaxStamina(uint32 newMaxStamina) public onlyRole(MANTAINER_ROLE) {
-    maxStamina = newMaxStamina;
+  function updateMaxEnergy(uint256 newMaxEnergy) public onlyRole(MANTAINER_ROLE) {
+    maxEnergy = newMaxEnergy;
   }
 
   /**
-   * @dev Updates the seconds Per Stamina.
+   * @dev Updates the seconds Per Energy.
    * Only MANTAINER_ROLE can call
    */
-  function updateSecondsPerStamina(uint32 newSecondsPerStamina) public onlyRole(MANTAINER_ROLE) {
-    secondsPerStamina = newSecondsPerStamina;
+  function updateSecondsPerEnergy(uint256 newSecondsPerEnergy) public onlyRole(MANTAINER_ROLE) {
+    secondsPerEnergy = newSecondsPerEnergy;
   }
 }

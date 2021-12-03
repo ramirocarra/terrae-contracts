@@ -129,7 +129,7 @@ describe("Terrae Profiles", () => {
       await expect(
         profiles.connect(addr1).transferFrom(addr1.address, addr2.address, 1)
       ).to.be.revertedWith(
-        "VM Exception while processing transaction: reverted with reason string 'Recieving address already owns a profile'"
+        "VM Exception while processing transaction: reverted with reason string 'Receiving address already owns a profile'"
       );
     });
   });
@@ -147,25 +147,25 @@ describe("Terrae Profiles", () => {
       // add exp to user
       await profiles.connect(addr2).addExp(addr1.address, 2000);
       // check level
-      expect(await profiles.getLevel(1)).to.equal(3);
+      expect(await profiles.getLevel(1)).to.equal(2);
 
     });
   });
 
-  describe("Stamina stats and usage", () => {
-    it("Should get and use stamina", async () => {
+  describe("Energy stats and usage", () => {
+    it("Should get and use energy", async () => {
       await profiles.connect(addr1).createProfile("John Doe", 2);
-      expect(await profiles.getStamina(1)).to.equal(100);
+      expect(await profiles.getEnergy(1)).to.equal(100);
 
       // grant role
       await profiles.grantRole(
-        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("USE_STAMINA_ROLE")),
+        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("USE_ENERGY_ROLE")),
         addr2.address
       );
-      // use stamina
-      await profiles.connect(addr2).useStamina(addr1.address, 20);
-      // get new stamina
-      expect(await profiles.getStamina(1)).to.equal(80);
+      // use Energy
+      await profiles.connect(addr2).useEnergy(addr1.address, 20);
+      // get new Energy
+      expect(await profiles.getEnergy(1)).to.equal(80);
     });
   });
 
@@ -300,16 +300,16 @@ describe("Terrae Profiles", () => {
       expect(await profiles.experienceTable(2)).to.equal(3);
     });
 
-    it("Should update max stamina", async () => {
-      expect(await profiles.maxStamina()).to.equal(100);
-      await profiles.connect(owner).updateMaxStamina(222);
-      expect(await profiles.maxStamina()).to.equal(222);
+    it("Should update max energy", async () => {
+      expect(await profiles.maxEnergy()).to.equal(100);
+      await profiles.connect(owner).updateMaxEnergy(222);
+      expect(await profiles.maxEnergy()).to.equal(222);
     });
 
-    it("Should update seconds per stamina", async () => {
-      expect(await profiles.secondsPerStamina()).to.equal(300);
-      await profiles.connect(owner).updateSecondsPerStamina(2222);
-      expect(await profiles.secondsPerStamina()).to.equal(2222);
+    it("Should update seconds per Energy", async () => {
+      expect(await profiles.secondsPerEnergy()).to.equal(300);
+      await profiles.connect(owner).updateSecondsPerEnergy(2222);
+      expect(await profiles.secondsPerEnergy()).to.equal(2222);
     });
 
   });

@@ -18,7 +18,7 @@ library Arrays_uint32 {
    * `array` is expected to be sorted in ascending order, and to contain no
    * repeated elements.
    */
-  function findUpperBound(uint32[] storage array, uint32 element) internal view returns (uint256) {
+  function findUpperBound(uint32[] storage array, uint256 element) internal view returns (uint256) {
     if (array.length == 0) {
       return 0;
     }
