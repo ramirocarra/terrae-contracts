@@ -134,10 +134,183 @@ describe("Terrae Profiles", () => {
     });
   });
 
-  describe("Manteiner functions", () => {
+  describe("Experience stats and usage", () => {
+    it("Should get and update exp", async () => {
+      await profiles.connect(addr1).createProfile("John Doe", 2);
+      expect(await profiles.getLevel(1)).to.equal(0);
+
+      // grant role
+      await profiles.grantRole(
+        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("ADD_EXP_ROLE")),
+        addr2.address
+      );
+      // add exp to user
+      await profiles.connect(addr2).addExp(addr1.address, 2000);
+      // check level
+      expect(await profiles.getLevel(1)).to.equal(3);
+
+    });
+  });
+
+  describe("Stamina stats and usage", () => {
+    it("Should get and use stamina", async () => {
+      await profiles.connect(addr1).createProfile("John Doe", 2);
+      expect(await profiles.getStamina(1)).to.equal(100);
+
+      // grant role
+      await profiles.grantRole(
+        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("USE_STAMINA_ROLE")),
+        addr2.address
+      );
+      // use stamina
+      await profiles.connect(addr2).useStamina(addr1.address, 20);
+      // get new stamina
+      expect(await profiles.getStamina(1)).to.equal(80);
+    });
+  });
+
+  describe("Avatar updating", () => {
+    let notNftContract;
+    let exampleAvatarContract;
+
+    beforeEach(async () => {
+      const Denaris = await ethers.getContractFactory("Denaris");
+      notNftContract = await Denaris.deploy(owner.address);
+      await notNftContract.deployed();
+      const ExampleAvatar = await ethers.getContractFactory("ExampleAvatar");
+      exampleAvatarContract = await ExampleAvatar.deploy();
+      await exampleAvatarContract.deployed();
+    });
+
+    it("Should update default avatar", async () => {
+      await profiles.connect(addr1).createProfile("John Doe", 2);
+      expect((await profiles.getProfileById(1))[8]).to.equal(
+        "https://terrae.finance/avatars/2"
+      );
+      await profiles
+        .connect(addr1)
+        .updateDefaultAvatar(1, 3);
+      expect((await profiles.getProfileById(1))[8]).to.equal(
+        "https://terrae.finance/avatars/3"
+      );
+    });
+
+    it("Should add an ERC721 compliant contract and update a custom avatar", async () => {
+      expect(
+        profiles
+          .connect(owner)
+          .addCustomAvatarContract(exampleAvatarContract.address)
+      ).to.not.reverted;
+
+      await profiles.connect(addr1).createProfile("John Doe", 2);
+
+      // Try with not owned or not existent
+      await expect(
+        profiles
+          .connect(addr1)
+          .updateCustomAvatar(1, 2, exampleAvatarContract.address)
+      ).to.be.revertedWith(
+        "VM Exception while processing transaction: reverted with reason string 'ERC721: owner query for nonexistent token'"
+      );
+
+      // Mint an avatar
+      await exampleAvatarContract.awardAvatar(addr1.address);
+
+      // Try with owned
+      await profiles
+        .connect(addr1)
+        .updateCustomAvatar(1, 0, exampleAvatarContract.address);
+
+      // Get profile with new avatar
+      expect((await profiles.getProfileById(1))[8]).to.equal(
+        "https:/test.avatar/0"
+      );
+
+      // transfer avatar
+      await exampleAvatarContract
+        .connect(addr1)
+        .transferFrom(addr1.address, addr2.address, 0);
+
+      // get profile without owning avatar
+      expect((await profiles.getProfileById(1))[8]).to.equal(
+        "https://terrae.finance/avatars/2"
+      );
+
+      // remove whitelisted
+      await profiles
+        .connect(owner)
+        .removeCustomAvatarContract(exampleAvatarContract.address);
+
+      // try to use it again
+      await expect(
+        profiles
+          .connect(addr1)
+          .updateCustomAvatar(1, 2, exampleAvatarContract.address)
+      ).to.be.revertedWith(
+        "VM Exception while processing transaction: reverted with reason string 'Avatar contract not whitelisted'"
+      );
+    });
+
+    it("Should try to use a not whitelisted contract", async () => {
+      await profiles.connect(addr1).createProfile("John Doe", 2);
+      await expect(
+        profiles.connect(addr1).updateCustomAvatar(1, 2, addr2.address)
+      ).to.be.revertedWith(
+        "VM Exception while processing transaction: reverted with reason string 'Avatar contract not whitelisted'"
+      );
+    });
+
+    it("Should try to whitelist an address that is not a contract", async () => {
+      await expect(
+        profiles.connect(owner).addCustomAvatarContract(addr2.address)
+      ).to.be.revertedWith(
+        "VM Exception while processing transaction: reverted with reason string 'Cannot verify contract existance'"
+      );
+    });
+
+    it("Should try to add non ERC721 compliant contract", async () => {
+      await expect(
+        profiles.connect(owner).addCustomAvatarContract(notNftContract.address)
+      ).to.be.revertedWith(
+        "VM Exception while processing transaction: reverted with reason string 'Contract is not IERC721Metadata compliant'"
+      );
+    });
+  });
+
+  describe("Mantainer functions", () => {
     it("Should update max default avatars", async () => {
       await profiles.connect(owner).updateMaxDefaultAvatars(10);
       await profiles.connect(addr1).createProfile("John Doe", 9);
     });
+
+    it("Should update default avatars base URI", async () => {
+      await profiles.connect(addr1).createProfile("John Doe", 2);
+      expect((await profiles.getProfileById(1))[8]).to.equal("https://terrae.finance/avatars/2");
+      await profiles
+        .connect(owner)
+        .updateDefaultAvatarBaseURI("https://new.path/avatars/");
+      expect((await profiles.getProfileById(1))[8]).to.equal(
+        "https://new.path/avatars/2"
+      );
+    });
+
+    it("Should update experience table", async () => {
+      expect(await profiles.experienceTable(2)).to.equal(1048);
+      await profiles.connect(owner).updateExperienceTable([1, 2, 3, 4, 5, 6]);
+      expect(await profiles.experienceTable(2)).to.equal(3);
+    });
+
+    it("Should update max stamina", async () => {
+      expect(await profiles.maxStamina()).to.equal(100);
+      await profiles.connect(owner).updateMaxStamina(222);
+      expect(await profiles.maxStamina()).to.equal(222);
+    });
+
+    it("Should update seconds per stamina", async () => {
+      expect(await profiles.secondsPerStamina()).to.equal(300);
+      await profiles.connect(owner).updateSecondsPerStamina(2222);
+      expect(await profiles.secondsPerStamina()).to.equal(2222);
+    });
+
   });
 });

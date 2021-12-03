@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/Arrays.sol";
+import "./utils/Arrays_uint32.sol";
 
 contract Profiles is AccessControl, ERC721Enumerable {
   bytes32 private constant USE_STAMINA_ROLE = keccak256("USE_STAMINA_ROLE");
@@ -17,7 +17,158 @@ contract Profiles is AccessControl, ERC721Enumerable {
   // Burning profiles??
 
   //upgradable? how much will this cost?
-  uint256[] public experienceTable = [0, 10, 15, 20, 30, 40, 60];
+  uint32[] public experienceTable = [
+    0,
+    524,
+    1048,
+    1571,
+    2095,
+    2619,
+    3143,
+    3667,
+    4192,
+    4716,
+    5241,
+    5766,
+    6292,
+    6818,
+    7344,
+    7871,
+    8398,
+    8925,
+    9453,
+    9982,
+    10511,
+    11041,
+    11571,
+    12102,
+    12633,
+    13166,
+    13699,
+    14233,
+    14767,
+    15303,
+    15839,
+    16376,
+    16914,
+    17453,
+    17993,
+    18534,
+    19077,
+    19620,
+    20164,
+    20710,
+    21256,
+    21804,
+    22353,
+    22904,
+    23455,
+    24008,
+    24563,
+    25119,
+    25676,
+    26235,
+    26795,
+    27357,
+    27921,
+    28486,
+    29053,
+    29622,
+    30192,
+    30765,
+    31339,
+    31915,
+    32492,
+    33072,
+    33654,
+    34238,
+    34824,
+    35412,
+    36003,
+    36595,
+    37190,
+    37787,
+    38387,
+    38989,
+    39593,
+    40200,
+    40810,
+    41422,
+    42037,
+    42654,
+    43274,
+    43897,
+    44523,
+    45152,
+    45784,
+    46419,
+    47057,
+    47698,
+    48342,
+    48990,
+    49641,
+    50295,
+    50953,
+    51614,
+    52279,
+    52948,
+    53620,
+    54296,
+    54976,
+    55660,
+    56348,
+    57039,
+    57736,
+    58436,
+    59140,
+    59849,
+    60563,
+    61281,
+    62003,
+    62730,
+    63462,
+    64199,
+    64941,
+    65688,
+    66440,
+    67198,
+    67960,
+    68729,
+    69502,
+    70282,
+    71067,
+    71858,
+    72655,
+    73458,
+    74267,
+    75083,
+    75905,
+    76733,
+    77568,
+    78411,
+    79260,
+    80116,
+    80979,
+    81850,
+    82728,
+    83613,
+    84507,
+    85409,
+    86318,
+    87236,
+    88162,
+    89097,
+    90041,
+    90993,
+    91955,
+    92926,
+    93907,
+    94897,
+    95897,
+    96907,
+    97928,
+    98959
+  ];
 
   mapping(uint256 => Profile) public profiles;
   mapping(string => uint256) private _namesToProfileId;
@@ -109,7 +260,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
       defaultAvatarId, //default avatar
       0, // custom avatar id
       address(0), // custom avatar address
-      0, // stamina
+      maxStamina, // stamina
       block.timestamp //stamina timestamp
     );
 
@@ -237,7 +388,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
    * @dev Get the level from exp points.
    */
   function _getLevelFromExp(uint32 exp) internal view returns (uint16) {
-    return uint16(Arrays.findUpperBound(experienceTable, exp) - 1);
+    return uint16(Arrays_uint32.findUpperBound(experienceTable, exp) - 1);
   }
 
   /**
@@ -256,7 +407,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
     Profile memory profile = profiles[profileId];
     uint256 newStamina = (block.timestamp - profile.staminaTimestamp) / secondsPerStamina;
     (bool overflowed, uint256 totalStamina) = SafeMath.tryAdd(profile.stamina, newStamina);
-    if (overflowed || totalStamina > maxStamina) {
+    if (!overflowed || totalStamina > maxStamina) {
       totalStamina = maxStamina;
     }
     return uint32(totalStamina);
