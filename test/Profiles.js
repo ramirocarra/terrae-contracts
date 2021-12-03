@@ -49,8 +49,7 @@ describe("Terrae Profiles", () => {
       const mintedProfile = await profiles.getProfileById(1);
       expect(mintedProfile[0]).to.equal("John Doe");
       expect(mintedProfile[2]).to.equal(1);
-      expect(mintedProfile[3]).to.equal(0);
-      expect(mintedProfile[8]).to.equal("https://terrae.finance/avatars/2");
+      expect(mintedProfile[7]).to.equal("https://terrae.finance/avatars/2");
       expect(
         await profiles
           .connect(randomWallet.address)
@@ -134,24 +133,6 @@ describe("Terrae Profiles", () => {
     });
   });
 
-  describe("Experience stats and usage", () => {
-    it("Should get and update exp", async () => {
-      await profiles.connect(addr1).createProfile("John Doe", 2);
-      expect(await profiles.getLevel(1)).to.equal(0);
-
-      // grant role
-      await profiles.grantRole(
-        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("ADD_EXP_ROLE")),
-        addr2.address
-      );
-      // add exp to user
-      await profiles.connect(addr2).addExp(addr1.address, 2000);
-      // check level
-      expect(await profiles.getLevel(1)).to.equal(2);
-
-    });
-  });
-
   describe("Energy stats and usage", () => {
     it("Should get and use energy", async () => {
       await profiles.connect(addr1).createProfile("John Doe", 2);
@@ -184,13 +165,13 @@ describe("Terrae Profiles", () => {
 
     it("Should update default avatar", async () => {
       await profiles.connect(addr1).createProfile("John Doe", 2);
-      expect((await profiles.getProfileById(1))[8]).to.equal(
+      expect((await profiles.getProfileById(1))[7]).to.equal(
         "https://terrae.finance/avatars/2"
       );
       await profiles
         .connect(addr1)
         .updateDefaultAvatar(1, 3);
-      expect((await profiles.getProfileById(1))[8]).to.equal(
+      expect((await profiles.getProfileById(1))[7]).to.equal(
         "https://terrae.finance/avatars/3"
       );
     });
@@ -222,7 +203,7 @@ describe("Terrae Profiles", () => {
         .updateCustomAvatar(1, 0, exampleAvatarContract.address);
 
       // Get profile with new avatar
-      expect((await profiles.getProfileById(1))[8]).to.equal(
+      expect((await profiles.getProfileById(1))[7]).to.equal(
         "https:/test.avatar/0"
       );
 
@@ -232,7 +213,7 @@ describe("Terrae Profiles", () => {
         .transferFrom(addr1.address, addr2.address, 0);
 
       // get profile without owning avatar
-      expect((await profiles.getProfileById(1))[8]).to.equal(
+      expect((await profiles.getProfileById(1))[7]).to.equal(
         "https://terrae.finance/avatars/2"
       );
 
@@ -285,19 +266,13 @@ describe("Terrae Profiles", () => {
 
     it("Should update default avatars base URI", async () => {
       await profiles.connect(addr1).createProfile("John Doe", 2);
-      expect((await profiles.getProfileById(1))[8]).to.equal("https://terrae.finance/avatars/2");
+      expect((await profiles.getProfileById(1))[7]).to.equal("https://terrae.finance/avatars/2");
       await profiles
         .connect(owner)
         .updateDefaultAvatarBaseURI("https://new.path/avatars/");
-      expect((await profiles.getProfileById(1))[8]).to.equal(
+      expect((await profiles.getProfileById(1))[7]).to.equal(
         "https://new.path/avatars/2"
       );
-    });
-
-    it("Should update experience table", async () => {
-      expect(await profiles.experienceTable(2)).to.equal(1048);
-      await profiles.connect(owner).updateExperienceTable([1, 2, 3, 4, 5, 6]);
-      expect(await profiles.experienceTable(2)).to.equal(3);
     });
 
     it("Should update max energy", async () => {

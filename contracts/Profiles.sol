@@ -8,23 +8,11 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./utils/Arrays_uint32.sol";
 
 contract Profiles is AccessControl, ERC721Enumerable {
   bytes32 private constant USE_ENERGY_ROLE = keccak256("USE_ENERGY_ROLE");
   bytes32 private constant MANTAINER_ROLE = keccak256("MANTAINER_ROLE");
   bytes32 private constant ADD_EXP_ROLE = keccak256("ADD_EXP_ROLE");
-  // Burning profiles??
-
-  //upgradable? how much will this cost?
-  uint32[] public experienceTable = [
-    0,
-    524,
-    1048,
-    //....
-    97928,
-    98959
-  ];
 
   mapping(uint256 => Profile) public profiles;
   mapping(string => uint256) private _nameToProfileId;
@@ -141,7 +129,6 @@ contract Profiles is AccessControl, ERC721Enumerable {
       string memory,
       uint256,
       uint256,
-      uint256,
       uint8,
       uint256,
       address,
@@ -168,7 +155,6 @@ contract Profiles is AccessControl, ERC721Enumerable {
       profile.name,
       profile.created,
       profile.exp,
-      _getLevelFromExp(profile.exp),
       profile.defaultAvatarId,
       profile.customAvatarId,
       profile.customAvatarContract,
@@ -241,21 +227,6 @@ contract Profiles is AccessControl, ERC721Enumerable {
   }
 
   /**
-   * @dev Get the level from exp points.
-   */
-  function _getLevelFromExp(uint256 exp) internal view returns (uint256) {
-    return Arrays_uint32.findUpperBound(experienceTable, exp) - 1;
-  }
-
-  /**
-   * @dev Get the level by profile id.
-   */
-  function getLevel(uint256 profileId) public view returns (uint256) {
-    require(_exists(profileId), "Profile does not exist");
-    return _getLevelFromExp(profiles[profileId].exp);
-  }
-
-  /**
    * @dev Get the energy by profile id.
    */
   function getEnergy(uint256 profileId) public view returns (uint256) {
@@ -315,14 +286,6 @@ contract Profiles is AccessControl, ERC721Enumerable {
    */
   function removeCustomAvatarContract(address customAvatarContract) public onlyRole(MANTAINER_ROLE) {
     _avatarContractsEnabled[customAvatarContract] = false;
-  }
-
-  /**
-   * @dev Updates the experience table for game balancing.
-   * Only MANTAINER_ROLE can call
-   */
-  function updateExperienceTable(uint32[] memory newExperienceTable) public onlyRole(MANTAINER_ROLE) {
-    experienceTable = newExperienceTable;
   }
 
   /**
