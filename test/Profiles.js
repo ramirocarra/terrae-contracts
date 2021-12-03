@@ -70,6 +70,7 @@ describe("Terrae Profiles", () => {
       expect(mintedProfile[0]).to.equal("Jack Black");
       expect(await profiles.getProfileIdByAddress(addr2.address)).to.equal(2);
       expect(await profiles.getProfileIdByName("Jack Black")).to.equal(2);
+      expect(await profiles.getExp(addr2.address)).to.equal(1);
     });
 
     it("Should try to overflow max default avatars and fail", async () => {

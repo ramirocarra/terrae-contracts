@@ -227,6 +227,15 @@ contract Profiles is AccessControl, ERC721Enumerable {
   }
 
   /**
+   * @dev Get Experience for a profile by it's address.
+   */
+  function getExp(address profileAddress) public view returns (uint256) {
+    require(hasProfile(profileAddress), "address does not own a profile");
+    uint256 profileId = tokenOfOwnerByIndex(profileAddress, 0);
+    return profiles[profileId].exp;
+  }
+
+  /**
    * @dev Get the energy by profile id.
    */
   function getEnergy(uint256 profileId) public view returns (uint256) {
