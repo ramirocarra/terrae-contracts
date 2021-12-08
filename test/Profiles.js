@@ -4,12 +4,10 @@ const { ethers } = require("hardhat");
 describe("Terrae Profiles", () => {
   let profiles;
   let randomWallet;
-  let owner;
-  let addr1;
-  let addr2;
+  let owner, addr1, addr2, addr3;
 
   beforeEach(async () => {
-    [owner, addr1, addr2] = await ethers.getSigners();
+    [owner, addr1, addr2, addr3] = await ethers.getSigners();
     const Profiles = await ethers.getContractFactory("Profiles");
     profiles = await Profiles.deploy();
     await profiles.deployed();
@@ -286,6 +284,71 @@ describe("Terrae Profiles", () => {
       expect(await profiles.secondsPerElixir()).to.equal(300);
       await profiles.connect(owner).updateSecondsPerElixir(2222);
       expect(await profiles.secondsPerElixir()).to.equal(2222);
+    });
+
+  });
+
+  describe("Houses", () => {
+
+    let houseContract_1, houseContract_2;
+
+    beforeEach(async () => {
+      const HouseContract = await ethers.getContractFactory("ExampleHouse");
+      houseContract_1 = await HouseContract.deploy(profiles.address);
+      await houseContract_1.deployed();
+      houseContract_2 = await HouseContract.deploy(profiles.address);
+      await houseContract_2.deployed();
+      await profiles.connect(addr1).createProfile("John Doe", 2);
+      await profiles.connect(addr2).createProfile("Jack Black", 1);
+      // grant role to house
+      await profiles.connect(owner).grantRole(
+        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("SET_HOUSE_ROLE")),
+        houseContract_1.address
+      );
+      // add experience to addr1
+      await profiles.connect(owner).grantRole(
+        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("ADD_EXP_ROLE")),
+        owner.address
+      );
+      await profiles.connect(owner).addExp(addr1.address, 2000);
+    });
+
+    it("Should set the house correctly", async () => {
+      await houseContract_1.connect(addr1).selectHouse();
+      expect(await profiles.getHouseContract(addr1.address)).to.equal(houseContract_1.address);
+    });
+
+    it("Should try to set house without enough experience", async () => {
+      await expect(
+        houseContract_1.connect(addr2).selectHouse()
+      ).to.be.revertedWith(
+        "VM Exception while processing transaction: reverted with reason string 'Not enough experience to set this house'"
+      );
+    });
+
+    it("Should try to set house without a profile", async () => {
+      await expect(
+        houseContract_1.connect(addr3).selectHouse()
+      ).to.be.revertedWith(
+        "VM Exception while processing transaction: reverted with reason string 'address does not own a profile'"
+      );
+    });
+
+    it("Should try to set house with a contract with no role", async () => {
+      await expect(
+        houseContract_2.connect(addr1).selectHouse()
+      ).to.be.revertedWith(
+        `VM Exception while processing transaction: reverted with reason string 'AccessControl: account ${houseContract_2.address.toLowerCase()} is missing role 0x9842b3b833bc4f3c6fa5d5f30681d65f6471ecfa17860babe414ee280822d81f'`
+      );
+    });
+
+    it("Should try to set a house twice", async () => {
+      await houseContract_1.connect(addr1).selectHouse();
+      await expect(
+        houseContract_1.connect(addr1).selectHouse()
+      ).to.be.revertedWith(
+        "VM Exception while processing transaction: reverted with reason string 'Profile already has a House'"
+      );
     });
 
   });

@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract Profiles is AccessControl, ERC721Enumerable {
   bytes32 private constant USE_ELIXIR_ROLE = keccak256("USE_ELIXIR_ROLE");
+  bytes32 private constant SET_HOUSE_ROLE = keccak256("SET_HOUSE_ROLE");
   bytes32 private constant MANTAINER_ROLE = keccak256("MANTAINER_ROLE");
   bytes32 private constant ADD_EXP_ROLE = keccak256("ADD_EXP_ROLE");
 
@@ -35,6 +36,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
     address customAvatarContract; // Minting address if customizable, will need to ckeck ownership always
     uint256 elixir;
     uint256 elixirTimestamp;
+    address houseContract;
   }
 
   // Symbol thoughts????
@@ -105,7 +107,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
       0, // custom avatar id
       address(0), // custom avatar address
       maxElixir, // elixir
-      block.timestamp //elixir timestamp
+      block.timestamp, //elixir timestamp
+      address(0) // house address
     );
 
     return profileId;
@@ -133,7 +136,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
       uint256,
       address,
       bool,
-      string memory
+      string memory,
+      address
     )
   {
     require(_exists(_profileId), "Profile does not exist");
@@ -159,7 +163,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
       profile.customAvatarId,
       profile.customAvatarContract,
       ownsCustomAvatar,
-      avatarURI
+      avatarURI,
+      profile.houseContract
     );
   }
 
@@ -212,7 +217,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
     );
 
     profiles[profileId].customAvatarId = customAvatarId;
-    profiles[profileId].customAvatarContract = customAvatarContract; //should not change if used as House
+    profiles[profileId].customAvatarContract = customAvatarContract;
     return true;
   }
 
@@ -224,6 +229,25 @@ contract Profiles is AccessControl, ERC721Enumerable {
     require(hasProfile(profileAddress), "address does not own a profile");
     uint256 profileId = tokenOfOwnerByIndex(profileAddress, 0);
     profiles[profileId].exp += newExp;
+  }
+
+  /**
+   * @dev Set House contract for a profile by it's address.
+   * Only SET_HOUSE_ROLE can call and it will be set to the caller contract
+   */
+  function setHouseContract(address profileAddress) public onlyRole(SET_HOUSE_ROLE) {
+    require(hasProfile(profileAddress), "address does not own a profile");
+    uint256 profileId = tokenOfOwnerByIndex(profileAddress, 0);
+    profiles[profileId].houseContract = msg.sender;
+  }
+
+  /**
+   * @dev Get House contract for a profile by it's address.
+   */
+  function getHouseContract(address profileAddress) public view returns (address) {
+    require(hasProfile(profileAddress), "address does not own a profile");
+    uint256 profileId = tokenOfOwnerByIndex(profileAddress, 0);
+    return profiles[profileId].houseContract;
   }
 
   /**
