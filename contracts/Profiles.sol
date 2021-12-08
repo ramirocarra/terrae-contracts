@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract Profiles is AccessControl, ERC721Enumerable {
-  bytes32 private constant USE_ENERGY_ROLE = keccak256("USE_ENERGY_ROLE");
+  bytes32 private constant USE_ELIXIR_ROLE = keccak256("USE_ELIXIR_ROLE");
   bytes32 private constant MANTAINER_ROLE = keccak256("MANTAINER_ROLE");
   bytes32 private constant ADD_EXP_ROLE = keccak256("ADD_EXP_ROLE");
 
@@ -21,8 +21,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
   uint8 private _maxDefaultAvatars = 4;
   string private _defaultAvatarBaseURI = "https://terrae.finance/avatars/";
 
-  uint256 public maxEnergy = 100;
-  uint256 public secondsPerEnergy = 300;
+  uint256 public maxElixir = 100;
+  uint256 public secondsPerElixir = 300;
 
   struct Profile {
     string name; //limits???? moderator?
@@ -33,8 +33,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
     // Allow to whitelist minting contracts?
     uint256 customAvatarId;
     address customAvatarContract; // Minting address if customizable, will need to ckeck ownership always
-    uint256 energy;
-    uint256 energyTimestamp;
+    uint256 elixir;
+    uint256 elixirTimestamp;
   }
 
   // Symbol thoughts????
@@ -104,8 +104,8 @@ contract Profiles is AccessControl, ERC721Enumerable {
       defaultAvatarId, //default avatar
       0, // custom avatar id
       address(0), // custom avatar address
-      maxEnergy, // energy
-      block.timestamp //energy timestamp
+      maxElixir, // elixir
+      block.timestamp //elixir timestamp
     );
 
     return profileId;
@@ -212,7 +212,7 @@ contract Profiles is AccessControl, ERC721Enumerable {
     );
 
     profiles[profileId].customAvatarId = customAvatarId;
-    profiles[profileId].customAvatarContract = customAvatarContract;
+    profiles[profileId].customAvatarContract = customAvatarContract; //should not change if used as House
     return true;
   }
 
@@ -236,33 +236,33 @@ contract Profiles is AccessControl, ERC721Enumerable {
   }
 
   /**
-   * @dev Get the energy by profile id.
+   * @dev Get the elixir by profile id.
    */
-  function getEnergy(uint256 profileId) public view returns (uint256) {
+  function getElixir(uint256 profileId) public view returns (uint256) {
     require(_exists(profileId), "Profile does not exist");
     Profile memory profile = profiles[profileId];
-    uint256 newEnergy = (block.timestamp - profile.energyTimestamp) / secondsPerEnergy;
-    (bool overflowed, uint256 totalEnergy) = SafeMath.tryAdd(profile.energy, newEnergy);
-    if (!overflowed || totalEnergy > maxEnergy) {
-      totalEnergy = maxEnergy;
+    uint256 newElixir = (block.timestamp - profile.elixirTimestamp) / secondsPerElixir;
+    (bool overflowed, uint256 totalElixir) = SafeMath.tryAdd(profile.elixir, newElixir);
+    if (!overflowed || totalElixir > maxElixir) {
+      totalElixir = maxElixir;
     }
-    return totalEnergy;
+    return totalElixir;
   }
 
   /**
-   * @dev Consumes energy for a profile by it's address.
-   * Only constracts with USE_ENERGY_ROLE can call
-   * Returns true if consumed, false if not enough energy
+   * @dev Consumes elixir for a profile by it's address.
+   * Only constracts with USE_ELIXIR_ROLE can call
+   * Returns true if consumed, false if not enough elixir
    */
-  function useEnergy(address profileAddress, uint256 energyToConsume) public onlyRole(USE_ENERGY_ROLE) returns (bool) {
+  function useElixir(address profileAddress, uint256 elixirToConsume) public onlyRole(USE_ELIXIR_ROLE) returns (bool) {
     require(hasProfile(profileAddress), "address does not own a profile");
     uint256 profileId = tokenOfOwnerByIndex(profileAddress, 0);
-    uint256 currentEnergy = getEnergy(profileId);
-    if (currentEnergy < energyToConsume) {
+    uint256 currentElixir = getElixir(profileId);
+    if (currentElixir < elixirToConsume) {
       // Or revert????
       return false;
     }
-    profiles[profileId].energy = currentEnergy - energyToConsume;
+    profiles[profileId].elixir = currentElixir - elixirToConsume;
     return true;
   }
 
@@ -306,18 +306,18 @@ contract Profiles is AccessControl, ERC721Enumerable {
   }
 
   /**
-   * @dev Updates the energy max value.
+   * @dev Updates the elixir max value.
    * Only MANTAINER_ROLE can call
    */
-  function updateMaxEnergy(uint256 newMaxEnergy) public onlyRole(MANTAINER_ROLE) {
-    maxEnergy = newMaxEnergy;
+  function updateMaxElixir(uint256 newMaxElixir) public onlyRole(MANTAINER_ROLE) {
+    maxElixir = newMaxElixir;
   }
 
   /**
-   * @dev Updates the seconds Per Energy.
+   * @dev Updates the seconds Per Elixir.
    * Only MANTAINER_ROLE can call
    */
-  function updateSecondsPerEnergy(uint256 newSecondsPerEnergy) public onlyRole(MANTAINER_ROLE) {
-    secondsPerEnergy = newSecondsPerEnergy;
+  function updateSecondsPerElixir(uint256 newSecondsPerElixir) public onlyRole(MANTAINER_ROLE) {
+    secondsPerElixir = newSecondsPerElixir;
   }
 }

@@ -134,20 +134,20 @@ describe("Terrae Profiles", () => {
     });
   });
 
-  describe("Energy stats and usage", () => {
-    it("Should get and use energy", async () => {
+  describe("Elixir stats and usage", () => {
+    it("Should get and use elixir", async () => {
       await profiles.connect(addr1).createProfile("John Doe", 2);
-      expect(await profiles.getEnergy(1)).to.equal(100);
+      expect(await profiles.getElixir(1)).to.equal(100);
 
       // grant role
       await profiles.grantRole(
-        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("USE_ENERGY_ROLE")),
+        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("USE_ELIXIR_ROLE")),
         addr2.address
       );
-      // use Energy
-      await profiles.connect(addr2).useEnergy(addr1.address, 20);
-      // get new Energy
-      expect(await profiles.getEnergy(1)).to.equal(80);
+      // use Elixir
+      await profiles.connect(addr2).useElixir(addr1.address, 20);
+      // get new Elixir
+      expect(await profiles.getElixir(1)).to.equal(80);
     });
   });
 
@@ -276,16 +276,16 @@ describe("Terrae Profiles", () => {
       );
     });
 
-    it("Should update max energy", async () => {
-      expect(await profiles.maxEnergy()).to.equal(100);
-      await profiles.connect(owner).updateMaxEnergy(222);
-      expect(await profiles.maxEnergy()).to.equal(222);
+    it("Should update max elixir", async () => {
+      expect(await profiles.maxElixir()).to.equal(100);
+      await profiles.connect(owner).updateMaxElixir(222);
+      expect(await profiles.maxElixir()).to.equal(222);
     });
 
-    it("Should update seconds per Energy", async () => {
-      expect(await profiles.secondsPerEnergy()).to.equal(300);
-      await profiles.connect(owner).updateSecondsPerEnergy(2222);
-      expect(await profiles.secondsPerEnergy()).to.equal(2222);
+    it("Should update seconds per Elixir", async () => {
+      expect(await profiles.secondsPerElixir()).to.equal(300);
+      await profiles.connect(owner).updateSecondsPerElixir(2222);
+      expect(await profiles.secondsPerElixir()).to.equal(2222);
     });
 
   });
